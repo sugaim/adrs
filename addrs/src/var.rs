@@ -1,4 +1,4 @@
-use std::{borrow::Cow, marker::PhantomData};
+use std::borrow::Cow;
 
 use crate::Expr;
 
@@ -25,21 +25,19 @@ impl<T> Var<T> {
 }
 
 #[derive(Debug, Clone)]
-pub struct VarFactory<T> {
+pub struct VarFactory {
     name: Cow<'static, str>,
     cnt: usize,
-    _marker: PhantomData<T>,
 }
 
-impl<T> VarFactory<T> {
+impl VarFactory {
     pub fn new(name: impl Into<String>) -> Self {
         Self {
             name: name.into().into(),
             cnt: 0,
-            _marker: PhantomData,
         }
     }
-    pub fn gen(&mut self, val: T) -> Var<T> {
+    pub fn gen<T>(&mut self, val: T) -> Var<T> {
         let id = self.cnt;
         self.cnt += 1;
         Var {

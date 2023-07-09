@@ -20,11 +20,15 @@ mod tests {
 
         let mut res: Expr<f64> = Zero::zero();
         for _ in 0..100000 {
-            res += -x.clone() * y.clone() * x.clone() * 3.1 - z.clone() * 3.2;
+            res += -x.clone() * y.clone() * x.clone() * 3.1 - z.clone() * vf.gen(1.0).into_expr();
         }
         // println!("{:?}", res);
         // println!("{:?}", res.inputs());
         println!("{:?}", res.output());
-        println!("{:?}", res.grads());
+
+        let stopwatch = std::time::Instant::now();
+        let grads = res.grads();
+        // println!("{:?}", res.grads());
+        println!("{:?}", stopwatch.elapsed());
     }
 }
