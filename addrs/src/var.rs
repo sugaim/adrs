@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, rc::Rc, sync::Mutex};
 
 use crate::Expr;
 
@@ -34,7 +34,7 @@ impl<T> Var<T> {
 pub struct VarGroup {
     id: usize,
     name: Cow<'static, str>,
-    cnt: usize,
+    cnt: Rc<Mutex<usize>>,
 }
 
 impl VarGroup {
@@ -42,16 +42,27 @@ impl VarGroup {
         static ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
         let id = ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         let name = name.into().into();
-        let cnt = 0;
+        let cnt = Rc::new(Mutex::new(0));
         Self { id, name, cnt }
     }
-    pub fn gen<T>(&mut self, val: T) -> Var<T> {
+
+    #[inline]
+    pub fn id(&self) -> usize {
+        self.id
+    }
+    #[inline]
+    pub fn name(&self) -> Cow<'static, str> {
+        self.name.clone()
+    }
+
+    pub fn val<T>(&self, val: T) -> Var<T> {
+        let mut cnt = self.cnt.lock().unwrap();
         let id = Id {
             group: self.id,
             name: self.name.clone(),
-            num: self.cnt,
+            num: *cnt,
         };
-        self.cnt += 1;
+        *cnt += 1;
         Var { val, id }
     }
 }
