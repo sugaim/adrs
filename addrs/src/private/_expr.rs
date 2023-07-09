@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap, VecDeque};
+use std::collections::{BTreeMap, VecDeque};
 
 use derivative::Derivative;
 
@@ -12,6 +12,7 @@ pub(crate) enum _Expr<T> {
     _OnlyForDrop,
     Leaf(_Leaf<T>),
     Node(usize, _Node<T>),
+    Compressed { g: usize, o: T, gs: BTreeMap<Id, T> },
 }
 
 impl<T> From<Var<T>> for _Expr<T> {
@@ -40,6 +41,7 @@ impl<T> _Expr<T> {
             Self::_OnlyForDrop => unreachable!(),
             Self::Leaf(l) => l.val(),
             Self::Node(_, n) => n.output(),
+            Self::Compressed { o, .. } => o,
         }
     }
     #[inline]
@@ -48,6 +50,7 @@ impl<T> _Expr<T> {
             Self::_OnlyForDrop => 0,
             Self::Leaf(_) => 0,
             Self::Node(g, _) => *g,
+            Self::Compressed { g, .. } => *g,
         }
     }
     #[inline]
@@ -64,6 +67,13 @@ impl<T: Scalar> _Expr<T> {
     }
 
     fn grads_v1(&self, seed: T) -> BTreeMap<Id, T> {
+        if let Self::Compressed { gs, .. } = self {
+            let mut res = gs.clone();
+            for (_, g) in res.iter_mut() {
+                *g *= &seed;
+            }
+            return res;
+        }
         let mut res = BTreeMap::new();
         let mut grads = VecDeque::new();
         grads.push_back((self, seed));
@@ -79,6 +89,12 @@ impl<T: Scalar> _Expr<T> {
                     _Leaf::Const(_) => {}
                 },
                 _Expr::Node(_, n) => n.push_grads(&mut grads, grad),
+                _Expr::Compressed { gs, .. } => {
+                    for (id, g) in gs {
+                        let g = grad.clone() * g;
+                        res.entry(id.clone()).and_modify(|x| *x += &g).or_insert(g);
+                    }
+                }
             }
         }
         res

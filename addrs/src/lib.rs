@@ -32,6 +32,9 @@ mod tests {
         println!("{:?}", res.output());
 
         let stopwatch = std::time::Instant::now();
+        res.compress();
+        println!("{:?}", stopwatch.elapsed());
+        let stopwatch = std::time::Instant::now();
         let grads = res.grads();
         println!("{:?}", stopwatch.elapsed());
         println!("{:?}", grads.len());

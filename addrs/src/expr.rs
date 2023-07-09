@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap, VecDeque};
+use std::collections::{BTreeMap, VecDeque};
 
 use derivative::Derivative;
 use num_traits::{One, Zero};
@@ -53,9 +53,19 @@ impl<T> Expr<T> {
 
 impl<T: Scalar> Expr<T> {
     #[inline]
+    pub fn compress(&mut self) {
+        let compressed = _Expr::Compressed {
+            g: self.0.generation(),
+            o: self.output().clone(),
+            gs: self.grads(),
+        };
+        *self = compressed.into();
+    }
+    #[inline]
     pub fn grads(&self) -> BTreeMap<Id, T> {
         self.grads_with_seed(T::one())
     }
+    #[inline]
     pub fn grads_with_seed(&self, seed: T) -> BTreeMap<Id, T> {
         self.0.grads(seed)
     }
@@ -114,7 +124,10 @@ impl<T> Drop for Expr<T> {
         // Expression tree is realized with recursion.
         // hence, naive drop leads to stack overflow.
         // To avoid this, we implement explicitly and use for-loop instead of recursion.
-        if matches!(self.0, _Expr::Leaf(..)) || matches!(self.0, _Expr::_OnlyForDrop) {
+        if matches!(self.0, _Expr::Leaf(..))
+            || matches!(self.0, _Expr::_OnlyForDrop)
+            || matches!(self.0, _Expr::Compressed { .. })
+        {
             return;
         }
 
