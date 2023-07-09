@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{BTreeMap, HashMap, VecDeque};
 
 use derivative::Derivative;
 
@@ -59,12 +59,12 @@ impl<T> _Expr<T> {
 #[allow(dead_code)]
 impl<T: Scalar> _Expr<T> {
     #[inline]
-    pub fn grads(&self, seed: T) -> HashMap<Id, T> {
+    pub fn grads(&self, seed: T) -> BTreeMap<Id, T> {
         self.grads_v1(seed)
     }
 
-    fn grads_v1(&self, seed: T) -> HashMap<Id, T> {
-        let mut res = HashMap::new();
+    fn grads_v1(&self, seed: T) -> BTreeMap<Id, T> {
+        let mut res = BTreeMap::new();
         let mut grads = VecDeque::new();
         grads.push_back((self, seed));
         while let Some((node, grad)) = grads.pop_back() {

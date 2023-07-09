@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{BTreeMap, HashMap, VecDeque};
 
 use derivative::Derivative;
 use num_traits::{One, Zero};
@@ -53,10 +53,10 @@ impl<T> Expr<T> {
 
 impl<T: Scalar> Expr<T> {
     #[inline]
-    pub fn grads(&self) -> HashMap<Id, T> {
+    pub fn grads(&self) -> BTreeMap<Id, T> {
         self.grads_with_seed(T::one())
     }
-    pub fn grads_with_seed(&self, seed: T) -> HashMap<Id, T> {
+    pub fn grads_with_seed(&self, seed: T) -> BTreeMap<Id, T> {
         self.0.grads(seed)
     }
 }
