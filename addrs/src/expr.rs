@@ -54,7 +54,10 @@ impl<T> Expr<T> {
 impl<T: Scalar> Expr<T> {
     #[inline]
     pub fn grads(&self) -> HashMap<(String, usize), T> {
-        self.0.grads()
+        self.grads_with_seed(T::one())
+    }
+    pub fn grads_with_seed(&self, seed: T) -> HashMap<(String, usize), T> {
+        self.0.grads(seed)
     }
 }
 impl<T> AsRef<T> for Expr<T> {

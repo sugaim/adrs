@@ -59,14 +59,14 @@ impl<T> _Expr<T> {
 #[allow(dead_code)]
 impl<T: Scalar> _Expr<T> {
     #[inline]
-    pub fn grads(&self) -> HashMap<(String, usize), T> {
-        self.grads_v1()
+    pub fn grads(&self, seed: T) -> HashMap<(String, usize), T> {
+        self.grads_v1(seed)
     }
 
-    fn grads_v1(&self) -> HashMap<(String, usize), T> {
+    fn grads_v1(&self, seed: T) -> HashMap<(String, usize), T> {
         let mut res = HashMap::new();
         let mut grads = VecDeque::new();
-        grads.push_back((self, T::one()));
+        grads.push_back((self, seed));
         while let Some((node, grad)) = grads.pop_back() {
             match &node {
                 _Expr::_OnlyForDrop => unreachable!(),
