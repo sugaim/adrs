@@ -4,7 +4,7 @@ mod scalar;
 mod var;
 
 pub use expr::Expr;
-pub use var::{Var, VarFactory};
+pub use var::{Var, VarGroup};
 
 #[cfg(test)]
 mod tests {
@@ -13,7 +13,7 @@ mod tests {
     use super::*;
     #[test]
     fn it_works() {
-        let mut vf = VarFactory::new("x");
+        let mut vf = VarGroup::new("x");
         let x = vf.gen(4.2).into_expr();
         let y = vf.gen(2.5).into_expr();
         let z = vf.gen(3.1).into_expr();
