@@ -1,16 +1,15 @@
-use std::rc::Rc;
-
-use crate::{scalar::Sqrt, Expr};
+use crate::{
+    scalar::{Scalar, Sqrt},
+    Expr,
+};
 
 use super::{_UOp, _Unary};
 
-impl<T: Sqrt + Clone> Sqrt for Expr<T> {
+impl<T: Scalar + Sqrt> Sqrt for Expr<T> {
     #[inline]
     fn sqrt(self) -> Self {
         let o = self.output().clone().sqrt();
-        let i = Rc::new(self._take());
-        let is_c = i.is_const();
-        let op = _UOp::Sqrt;
-        _Unary { i, o, is_c, op }.into()
+        let g = T::from(0.5_f64) / &o;
+        _Unary::create(self, o, g, _UOp::Sqrt)
     }
 }

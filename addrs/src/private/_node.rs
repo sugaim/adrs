@@ -2,6 +2,8 @@ use std::collections::VecDeque;
 
 use derivative::Derivative;
 
+use crate::scalar::Scalar;
+
 use super::{_Expr, _binary::_Binary, _unary::_Unary};
 
 #[derive(Clone, Derivative)]
@@ -21,16 +23,6 @@ impl<T> _Node<T> {
             Self::Binary(b) => b.output(),
         }
     }
-    #[inline]
-    pub fn is_const(&self) -> bool {
-        match self {
-            Self::Unary(u) => u.is_const(),
-            Self::Binary(b) => {
-                let (is_cl, is_cr) = b.is_const_each();
-                is_cl && is_cr
-            }
-        }
-    }
     pub fn _take_expr_to_back_for_drop(&mut self, buf: &mut VecDeque<_Expr<T>>) {
         match self {
             _Node::Unary(u) => {
@@ -48,6 +40,16 @@ impl<T> _Node<T> {
                     buf.push_back(std::mem::replace(r, _Expr::_OnlyForDrop));
                 }
             }
+        }
+    }
+}
+
+impl<T: Scalar> _Node<T> {
+    #[inline]
+    pub fn push_grads<'a>(&'a self, grads: &mut VecDeque<(&'a _Expr<T>, T)>, grad: T) {
+        match self {
+            Self::Unary(u) => u.push_grads(grads, grad),
+            Self::Binary(b) => b.push_grads(grads, grad),
         }
     }
 }

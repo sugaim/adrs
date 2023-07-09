@@ -19,8 +19,4 @@ impl<T> _Leaf<T> {
             Self::Const(c) => c,
         }
     }
-    #[inline]
-    pub fn is_const(&self) -> bool {
-        matches!(self, Self::Const(_))
-    }
 }

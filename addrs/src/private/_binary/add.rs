@@ -1,4 +1,4 @@
-use std::{ops::Add, rc::Rc};
+use std::ops::Add;
 
 use crate::{scalar::Scalar, Expr};
 
@@ -12,19 +12,8 @@ where
     #[inline]
     fn add(self, rhs: Self) -> Self::Output {
         let o = self.output().clone() + rhs.output();
-        let l = Rc::new(self._take());
-        let r = Rc::new(rhs._take());
-        let op = _BOp::Add;
-        let is_cl = l.is_const();
-        let is_cr = r.is_const();
-        _Binary {
-            l,
-            r,
-            o,
-            op,
-            is_cl,
-            is_cr,
-        }
-        .into()
+        let gl = T::one();
+        let gr = T::one();
+        _Binary::create(self, rhs, o, gl, gr, _BOp::Add)
     }
 }

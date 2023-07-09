@@ -3,7 +3,7 @@ mod log;
 mod neg;
 mod sqrt;
 
-use std::rc::Rc;
+use std::{collections::VecDeque, rc::Rc};
 
 use crate::{expr::Expr, scalar::Scalar};
 
@@ -21,18 +21,26 @@ enum _UOp {
 pub(crate) struct _Unary<T> {
     i: Rc<_Expr<T>>,
     o: T,
-    is_c: bool,
+    g: T,
+    #[allow(dead_code)]
     op: _UOp,
 }
 
 impl<T> _Unary<T> {
     #[inline]
+    fn create(i: Expr<T>, o: T, g: T, op: _UOp) -> Expr<T> {
+        if i._is_const() {
+            return Expr::constant(o);
+        }
+        let i = Rc::new(i._take());
+        let gen = i.generation() + 1;
+        let u = _Unary { i, o, g, op };
+        _Expr::Node(gen, _Node::Unary(u)).into()
+    }
+
+    #[inline]
     pub fn output(&self) -> &T {
         &self.o
-    }
-    #[inline]
-    pub fn is_const(&self) -> bool {
-        self.is_c
     }
     #[inline]
     pub fn _ref_expr_for_drop(&mut self) -> Option<&mut _Expr<T>> {
@@ -40,22 +48,9 @@ impl<T> _Unary<T> {
     }
 }
 impl<T: Scalar> _Unary<T> {
-    fn _adj_grad(&self, grad: T) -> T {
-        match &self.op {
-            _UOp::Neg => -grad,
-            _UOp::Sqrt => grad / (T::from(2.0) * self.output()),
-            _UOp::Exp => grad * self.output(),
-            _UOp::Log => grad / self.i.output(),
+    pub fn push_grads<'a>(&'a self, grads: &mut VecDeque<(&'a _Expr<T>, T)>, grad: T) {
+        if !self.i.is_const() {
+            grads.push_back((&self.i, grad * &self.g));
         }
-    }
-    pub fn backward(&self, grad: T) -> (&_Expr<T>, T) {
-        (&self.i, self._adj_grad(grad))
-    }
-}
-
-impl<T> From<_Unary<T>> for Expr<T> {
-    fn from(u: _Unary<T>) -> Self {
-        let g = u.i.generation() + 1;
-        _Expr::Node(g, _Node::Unary(u)).into()
     }
 }

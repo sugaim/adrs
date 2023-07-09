@@ -18,7 +18,7 @@ impl<T> From<Var<T>> for Expr<T> {
 impl<T: Scalar> From<f64> for Expr<T> {
     #[inline]
     fn from(val: f64) -> Self {
-        Expr(val.into())
+        Expr::constant(val.into())
     }
 }
 impl<T> From<_Expr<T>> for Expr<T> {
@@ -44,6 +44,10 @@ impl<T> Expr<T> {
     #[inline]
     pub(crate) fn _take(mut self) -> _Expr<T> {
         std::mem::replace(&mut self.0, _Expr::_OnlyForDrop)
+    }
+    #[inline]
+    pub(crate) fn _is_const(&self) -> bool {
+        self.0.is_const()
     }
 }
 

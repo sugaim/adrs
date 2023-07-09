@@ -1,4 +1,4 @@
-use std::{ops::Neg, rc::Rc};
+use std::ops::Neg;
 
 use crate::{scalar::Scalar, Expr};
 
@@ -9,9 +9,7 @@ impl<T: Scalar> Neg for Expr<T> {
     #[inline]
     fn neg(self) -> Self::Output {
         let o = -self.output().clone();
-        let i = Rc::new(self._take());
-        let is_c = i.is_const();
-        let op = _UOp::Neg;
-        _Unary { i, o, is_c, op }.into()
+        let g = -T::one();
+        _Unary::create(self, o, g, _UOp::Neg)
     }
 }

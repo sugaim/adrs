@@ -4,6 +4,7 @@ mod mul;
 mod sub;
 
 use std::{
+    collections::VecDeque,
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign},
     rc::Rc,
 };
@@ -21,61 +22,83 @@ enum _BOp {
 }
 
 #[derive(Debug, Clone)]
+enum _In<T> {
+    L(Rc<_Expr<T>>),
+    R(Rc<_Expr<T>>),
+    LR { l: Rc<_Expr<T>>, r: Rc<_Expr<T>> },
+}
+
+#[derive(Debug, Clone)]
 pub(crate) struct _Binary<T> {
-    l: Rc<_Expr<T>>,
-    r: Rc<_Expr<T>>,
+    i: _In<T>,
     o: T,
-    is_cl: bool,
-    is_cr: bool,
-    op: _BOp,
+    gl: T,
+    gr: T,
+    #[allow(dead_code)]
+    op: _BOp, // debug purpose
 }
 
 impl<T> _Binary<T> {
+    fn create(l: Expr<T>, r: Expr<T>, o: T, gl: T, gr: T, op: _BOp) -> Expr<T> {
+        if l._is_const() && r._is_const() {
+            return Expr::constant(o);
+        }
+        let (gen, i) = match (l._is_const(), r._is_const()) {
+            (true, false) => {
+                let r = Rc::new(r._take());
+                (r.generation() + 1, _In::R(r))
+            }
+            (false, true) => {
+                let l = Rc::new(l._take());
+                (l.generation() + 1, _In::L(l))
+            }
+            _ => {
+                let l = Rc::new(l._take());
+                let r = Rc::new(r._take());
+                (l.generation().max(r.generation()) + 1, _In::LR { l, r })
+            }
+        };
+        let b = _Binary { i, o, gl, gr, op };
+        _Expr::Node(gen, _Node::Binary(b)).into()
+    }
+
     #[inline]
     pub fn output(&self) -> &T {
         &self.o
     }
     #[inline]
-    pub fn is_const_each(&self) -> (bool, bool) {
-        (self.is_cl, self.is_cr)
-    }
-    #[inline]
     pub fn _ref_expr_for_drop(&mut self) -> (Option<&mut _Expr<T>>, Option<&mut _Expr<T>>) {
-        let _Binary { l, r, .. } = self;
-        (Rc::get_mut(l), Rc::get_mut(r))
-    }
-}
-impl<T: Scalar> _Binary<T> {
-    fn _adj_der_l(&self, grad: T) -> T {
-        match &self.op {
-            _BOp::Add => grad,
-            _BOp::Sub => grad,
-            _BOp::Mul => grad * self.r.output(),
-            _BOp::Div => grad / self.r.output(),
+        match &mut self.i {
+            _In::L(l) => (Rc::get_mut(l), None),
+            _In::R(r) => (None, Rc::get_mut(r)),
+            _In::LR { l, r } => (Rc::get_mut(l), Rc::get_mut(r)),
         }
-    }
-    fn _adj_der_r(&self, grad: T) -> T {
-        match &self.op {
-            _BOp::Add => grad,
-            _BOp::Sub => -grad,
-            _BOp::Mul => grad * self.l.output(),
-            _BOp::Div => -grad * &self.o / self.r.output(),
-        }
-    }
-    pub fn backward_l(&self, grad: T) -> (&_Expr<T>, T) {
-        (&self.l, self._adj_der_l(grad))
-    }
-    pub fn backward_r(&self, grad: T) -> (&_Expr<T>, T) {
-        (&self.r, self._adj_der_r(grad))
     }
 }
 
-impl<T> From<_Binary<T>> for Expr<T> {
-    #[inline]
-    fn from(b: _Binary<T>) -> Self {
-        let _Binary { l, r, .. } = &b;
-        let g = l.generation().max(r.generation()) + 1;
-        _Expr::Node(g, _Node::Binary(b)).into()
+impl<T: Scalar> _Binary<T> {
+    pub fn push_grads<'a>(&'a self, grads: &mut VecDeque<(&'a _Expr<T>, T)>, grad: T) {
+        match &self.i {
+            _In::L(l) => {
+                if !l.is_const() {
+                    grads.push_back((l, grad * &self.gl))
+                }
+            }
+            _In::R(r) => {
+                if !r.is_const() {
+                    grads.push_back((r, grad * &self.gr))
+                }
+            }
+            _In::LR { l, r } => match (l.is_const(), r.is_const()) {
+                (true, false) => grads.push_back((r, grad * &self.gr)),
+                (false, true) => grads.push_back((l, grad * &self.gl)),
+                (false, false) => {
+                    grads.push_back((l, grad.clone() * &self.gl));
+                    grads.push_back((r, grad * &self.gr));
+                }
+                _ => {}
+            },
+        }
     }
 }
 
