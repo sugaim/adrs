@@ -3,7 +3,7 @@ use std::collections::{HashMap, VecDeque};
 use derivative::Derivative;
 use num_traits::{One, Zero};
 
-use crate::{private::_Expr, scalar::Scalar, Var};
+use crate::{private::_Expr, scalar::Scalar, var::Id, Var};
 
 #[derive(Clone, Derivative)]
 #[derivative(Debug = "transparent")]
@@ -53,10 +53,10 @@ impl<T> Expr<T> {
 
 impl<T: Scalar> Expr<T> {
     #[inline]
-    pub fn grads(&self) -> HashMap<(String, usize), T> {
+    pub fn grads(&self) -> HashMap<Id, T> {
         self.grads_with_seed(T::one())
     }
-    pub fn grads_with_seed(&self, seed: T) -> HashMap<(String, usize), T> {
+    pub fn grads_with_seed(&self, seed: T) -> HashMap<Id, T> {
         self.0.grads(seed)
     }
 }

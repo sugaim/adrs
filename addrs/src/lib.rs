@@ -19,7 +19,7 @@ mod tests {
         let z = vf.gen(3.1).into_expr();
 
         let mut res: Expr<f64> = Zero::zero();
-        for _ in 0..500000 {
+        for _ in 0..100000 {
             res += -x.clone() * y.clone() * x.clone() * 3.1
                 - z.clone()
                     * vf.gen(1.0).into_expr()

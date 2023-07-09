@@ -2,17 +2,22 @@ use std::borrow::Cow;
 
 use crate::Expr;
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Id {
+    pub name: Cow<'static, str>,
+    pub num: usize,
+}
+
 #[derive(Debug, Clone)]
 pub struct Var<T> {
     val: T,
-    name: Cow<'static, str>,
-    id: usize,
+    id: Id,
 }
 
 impl<T> Var<T> {
     #[inline]
-    pub fn ident(&self) -> (&str, usize) {
-        (self.name.as_ref(), self.id)
+    pub fn id(&self) -> &Id {
+        &self.id
     }
     #[inline]
     pub fn val(&self) -> &T {
@@ -38,12 +43,11 @@ impl VarFactory {
         }
     }
     pub fn gen<T>(&mut self, val: T) -> Var<T> {
-        let id = self.cnt;
-        self.cnt += 1;
-        Var {
-            val,
+        let id = Id {
             name: self.name.clone(),
-            id,
-        }
+            num: self.cnt,
+        };
+        self.cnt += 1;
+        Var { val, id }
     }
 }

@@ -2,7 +2,7 @@ use std::collections::{HashMap, VecDeque};
 
 use derivative::Derivative;
 
-use crate::{scalar::Scalar, Var};
+use crate::{scalar::Scalar, var::Id, Var};
 
 use super::{_leaf::_Leaf, _node::_Node};
 
@@ -59,11 +59,11 @@ impl<T> _Expr<T> {
 #[allow(dead_code)]
 impl<T: Scalar> _Expr<T> {
     #[inline]
-    pub fn grads(&self, seed: T) -> HashMap<(String, usize), T> {
+    pub fn grads(&self, seed: T) -> HashMap<Id, T> {
         self.grads_v1(seed)
     }
 
-    fn grads_v1(&self, seed: T) -> HashMap<(String, usize), T> {
+    fn grads_v1(&self, seed: T) -> HashMap<Id, T> {
         let mut res = HashMap::new();
         let mut grads = VecDeque::new();
         grads.push_back((self, seed));
@@ -72,8 +72,7 @@ impl<T: Scalar> _Expr<T> {
                 _Expr::_OnlyForDrop => unreachable!(),
                 _Expr::Leaf(leaf) => match leaf {
                     _Leaf::Var(v) => {
-                        let (name, id) = v.ident();
-                        res.entry((name.to_owned(), id))
+                        res.entry(v.id().clone())
                             .and_modify(|x| *x += &grad)
                             .or_insert(grad);
                     }
