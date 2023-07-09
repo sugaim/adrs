@@ -5,10 +5,9 @@ mod sqrt;
 
 use std::rc::Rc;
 
-use crate::{
-    expr::{Expr, _Expr, _Node},
-    scalar::Scalar,
-};
+use crate::{expr::Expr, scalar::Scalar};
+
+use super::{_expr::_Expr, _node::_Node};
 
 #[derive(Debug, Clone)]
 enum _UOp {

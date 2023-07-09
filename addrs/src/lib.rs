@@ -1,7 +1,6 @@
-mod binary;
 mod expr;
+mod private;
 mod scalar;
-mod unary;
 mod var;
 
 pub use expr::Expr;
@@ -26,6 +25,6 @@ mod tests {
         // println!("{:?}", res);
         // println!("{:?}", res.inputs());
         println!("{:?}", res.output());
-        println!("{:?}", res.der());
+        println!("{:?}", res.grads());
     }
 }

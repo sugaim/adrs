@@ -8,11 +8,9 @@ use std::{
     rc::Rc,
 };
 
-use crate::{
-    expr::{_Expr, _Leaf, _Node},
-    scalar::Scalar,
-    Expr,
-};
+use crate::{scalar::Scalar, Expr};
+
+use super::{_expr::_Expr, _node::_Node};
 
 #[derive(Debug, Clone)]
 enum _BOp {
@@ -120,7 +118,7 @@ macro_rules! define_binary_operations {
             type Output = Self;
             #[inline]
             fn $func(self, rhs: T) -> Self::Output {
-                $trait::$func(self, Expr::from(_Expr::Leaf(_Leaf::Const(rhs))))
+                $trait::$func(self, Expr::constant(rhs))
             }
         }
         impl<T> $trait<&T> for Expr<T>
